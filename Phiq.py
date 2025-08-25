@@ -113,7 +113,7 @@ def load_data(uploaded_file):
     column_mapping = {
         'Data Faturamento Pedido': 'Data Faturamento Pedido', 'Cliente': 'Cliente',
         'Estado': 'Estado', 'UF': 'Estado', 'Vendedor': 'Vendedor',
-        'Preço Venda Total (R$)': 'Valor Total', 'Valor Total': 'Valor Total', 'Custo (R$)': 'Custo Unitario',
+        'Preço Venda Total (R$)': 'Valor Total', 'Valor Total': 'Valor Total',
         'Descrição': 'Descrição', 'Forma Pagamento': 'Forma Pagamento',
         'SEGMENTO ': 'Segmento', 'SEGMENTO': 'Segmento', 'Franquia': 'Franquia',
         'Data': 'Data'
@@ -130,15 +130,14 @@ def load_data(uploaded_file):
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors='coerce')
     
-    numeric_cols = ['Valor Total', 'Custo Unitario', 'Quantidade']
+    numeric_cols = ['Valor Total', 'Quantidade']
     for col in numeric_cols:
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce')
+            if df[col].dtype == 'object':
+                df[col] = df[col].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    df.dropna(subset=['Valor Total', 'Data Faturamento Pedido', 'Custo Unitario', 'Quantidade'], inplace=True)
-
-    df['Custo Total'] = df['Custo Unitario'] * df['Quantidade']
-    df['Lucro'] = df['Valor Total'] - df['Custo Total']
+    df.dropna(subset=['Valor Total', 'Data Faturamento Pedido', 'Quantidade'], inplace=True)
 
     text_cols = ['Estado', 'Vendedor', 'Segmento']
     for col in text_cols:
@@ -316,18 +315,10 @@ if page == "Visão Geral":
             fig_pizza.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color=TEXT_LIGHT, legend_font_color=TEXT_LIGHT)
             st.plotly_chart(fig_pizza, use_container_width=True)
 
-        st.subheader("🏆 Top 10 Clientes")
-        analise_clientes_por_geral = st.radio("Analisar por:", ["Faturamento", "Lucratividade"], horizontal=True, key='analise_clientes_geral')
-        
-        if analise_clientes_por_geral == "Faturamento":
-            top_clientes = df_filtered.groupby('Cliente')['Valor Total'].sum().nlargest(10)
-            fig_top = px.bar(top_clientes.reset_index(), x='Valor Total', y='Cliente', orientation='h', title="Maiores Clientes por Faturamento")
-            fig_top.update_traces(text=[formatar_numero_abreviado(v) for v in top_clientes], textposition='auto', marker_color=TEAL)
-        else: # Lucratividade
-            top_clientes = df_filtered.groupby('Cliente')['Lucro'].sum().nlargest(10)
-            fig_top = px.bar(top_clientes.reset_index(), x='Lucro', y='Cliente', orientation='h', title="Maiores Clientes por Lucratividade")
-            fig_top.update_traces(text=[formatar_numero_abreviado(v) for v in top_clientes], textposition='auto', marker_color=SOFT_BLUE)
-
+        st.subheader("🏆 Top 10 Clientes por Faturamento")
+        top_clientes = df_filtered.groupby('Cliente')['Valor Total'].sum().nlargest(10)
+        fig_top = px.bar(top_clientes.reset_index(), x='Valor Total', y='Cliente', orientation='h', title="Maiores Clientes por Faturamento")
+        fig_top.update_traces(text=[formatar_numero_abreviado(v) for v in top_clientes], textposition='auto', marker_color=TEAL)
         fig_top.update_layout(yaxis=dict(autorange="reversed"), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color=TEXT_LIGHT)
         st.plotly_chart(fig_top, use_container_width=True)
         
@@ -481,18 +472,10 @@ else:
             fig_pizza_gestor.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color=TEXT_LIGHT, legend_font_color=TEXT_LIGHT)
             st.plotly_chart(fig_pizza_gestor, use_container_width=True)
 
-        st.subheader("🏆 Top 10 Clientes")
-        analise_clientes_por_gestor = st.radio("Analisar por:", ["Faturamento", "Lucratividade"], horizontal=True, key='analise_clientes_gestor')
-        
-        if analise_clientes_por_gestor == "Faturamento":
-            top_clientes_gestor = df_gestor.groupby('Cliente')['Valor Total'].sum().nlargest(10)
-            fig_top_clientes_gestor = px.bar(top_clientes_gestor.reset_index(), x='Valor Total', y='Cliente', orientation='h', title=f"Top 10 Clientes por Faturamento - {gestor}")
-            fig_top_clientes_gestor.update_traces(text=[formatar_numero_abreviado(v) for v in top_clientes_gestor], textposition='auto', marker_color=TEAL)
-        else: # Lucratividade
-            top_clientes_gestor = df_gestor.groupby('Cliente')['Lucro'].sum().nlargest(10)
-            fig_top_clientes_gestor = px.bar(top_clientes_gestor.reset_index(), x='Lucro', y='Cliente', orientation='h', title=f"Top 10 Clientes por Lucratividade - {gestor}")
-            fig_top_clientes_gestor.update_traces(text=[formatar_numero_abreviado(v) for v in top_clientes_gestor], textposition='auto', marker_color=SOFT_BLUE)
-        
+        st.subheader("🏆 Top 10 Clientes por Faturamento")
+        top_clientes_gestor = df_gestor.groupby('Cliente')['Valor Total'].sum().nlargest(10)
+        fig_top_clientes_gestor = px.bar(top_clientes_gestor.reset_index(), x='Valor Total', y='Cliente', orientation='h', title=f"Top 10 Clientes por Faturamento - {gestor}")
+        fig_top_clientes_gestor.update_traces(text=[formatar_numero_abreviado(v) for v in top_clientes_gestor], textposition='auto', marker_color=TEAL)
         fig_top_clientes_gestor.update_layout(yaxis=dict(autorange="reversed"), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font_color=TEXT_LIGHT)
         st.plotly_chart(fig_top_clientes_gestor, use_container_width=True)
         
