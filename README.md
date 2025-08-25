@@ -29,7 +29,18 @@ A aplicação foi construída inteiramente em Python, utilizando **Streamlit** p
 
 **1. Clone o repositório e crie um ambiente virtual:**
 ```bash
-git clone <url-do-repositorio>
-cd <nome-do-repositorio>
+git clone <https://github.com/iamdaviwilliam/Acompanhamento-de-Franquias-Phiq>
+cd <Acompanhamento-de-Franquias-Phiq>
 python -m venv .venv
 source .venv/bin/activate # No Windows: .venv\Scripts\activate
+```
+**2. Instale as dependências
+```bash
+ pip install -r requirements.txt
+```
+**3. Como executar**
+Para iniciar a aplicação, execute o seguinte comando no terminal:
+```bash
+streamlit run app.py
+```
+A aplicação será aberta em seu navegador padrão.
